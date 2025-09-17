@@ -212,7 +212,10 @@ https://who-are-you-on-x.vercel.app`
       // Méthode simple : créer un canvas avec le contenu stylé
       const canvas = document.createElement('canvas')
       const ctx = canvas.getContext('2d')
-      if (!ctx) return
+      if (!ctx) {
+        alert('Could not create screenshot. Try taking a manual screenshot instead.')
+        return
+      }
 
       // Dimensions pour l'image (format carré pour les réseaux sociaux)
       const size = 800
@@ -252,6 +255,7 @@ https://who-are-you-on-x.vercel.app`
         const img = new Image()
         img.crossOrigin = 'anonymous'
         img.onload = () => {
+          if (!ctx) return
           ctx.save()
           ctx.beginPath()
           ctx.arc(size / 2, avatarY + avatarSize / 2, avatarSize / 2, 0, Math.PI * 2)
@@ -271,6 +275,7 @@ https://who-are-you-on-x.vercel.app`
       }
 
       function drawAvatarPlaceholder() {
+        if (!ctx) return
         // Avatar avec gradient
         const avatarGradient = ctx.createLinearGradient(avatarX, avatarY, avatarX + avatarSize, avatarY + avatarSize)
         const colors = getAvatarColor(result.handle).match(/#[a-f0-9]{6}/gi) || ['#667eea', '#764ba2']
@@ -290,6 +295,7 @@ https://who-are-you-on-x.vercel.app`
       }
 
       function finishDrawing() {
+        if (!ctx) return
         // Handle
         ctx.fillStyle = 'rgba(255, 255, 255, 0.85)'
         ctx.font = '24px system-ui'
