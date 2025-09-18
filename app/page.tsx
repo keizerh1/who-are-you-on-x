@@ -127,11 +127,24 @@ export default function Home() {
     setImageLoading(true)
     
     try {
-      const response = await fetch(`/api/result?handle=${encodeURIComponent(handle)}`)
+      // Lancer les deux requêtes en parallèle
+      const [response] = await Promise.all([
+        fetch(`/api/result?handle=${encodeURIComponent(handle)}`),
+        // Précharger l'image en parallèle
+        new Promise((resolve) => {
+          const img = new Image()
+          img.crossOrigin = 'anonymous'
+          img.src = `https://unavatar.io/x/${handle.trim().replace(/^@/, '').toLowerCase()}`
+          img.onload = () => resolve(img.src)
+          img.onerror = () => resolve(null)
+          setTimeout(() => resolve(null), 1500) // Timeout court
+        })
+      ])
+      
       const data = await response.json()
       setResult(data)
       
-      // Try to load profile picture
+      // Charger la photo de profil
       loadProfilePicture(data.handle)
     } catch (error) {
       console.error('Error:', error)
@@ -144,51 +157,37 @@ export default function Home() {
   const loadProfilePicture = (username: string) => {
     setImageLoading(true)
     
-    // Try multiple services in order
-    const services = [
-      `https://unavatar.io/twitter/${username}?fallback=false`,
-      `https://unavatar.io/x/${username}?fallback=false`,
-    ]
+    // Essayer directement l'URL principale
+    const primaryUrl = `https://unavatar.io/x/${username}`
     
-    let currentIndex = 0
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
     
-    const tryNextService = () => {
-      if (currentIndex >= services.length) {
+    // Timeout rapide de 1.5 secondes au lieu de 3
+    const timeoutId = setTimeout(() => {
+      setProfilePic(null)
+      setImageLoading(false)
+    }, 1500)
+    
+    img.onload = () => {
+      clearTimeout(timeoutId)
+      // Vérifier rapidement si l'image est valide
+      if (img.width > 1) {
+        setProfilePic(primaryUrl)
+      } else {
         setProfilePic(null)
-        setImageLoading(false)
-        return
       }
-      
-      const img = new Image()
-      img.crossOrigin = 'anonymous'
-      img.src = services[currentIndex]
-      
-      img.onload = () => {
-        // Check if image is not a default/placeholder
-        if (img.width > 1 && img.height > 1) {
-          setProfilePic(services[currentIndex])
-          setImageLoading(false)
-        } else {
-          currentIndex++
-          tryNextService()
-        }
-      }
-      
-      img.onerror = () => {
-        currentIndex++
-        tryNextService()
-      }
-      
-      // Timeout after 3 seconds
-      setTimeout(() => {
-        if (imageLoading) {
-          setProfilePic(null)
-          setImageLoading(false)
-        }
-      }, 3000)
+      setImageLoading(false)
     }
     
-    tryNextService()
+    img.onerror = () => {
+      clearTimeout(timeoutId)
+      setProfilePic(null)
+      setImageLoading(false)
+    }
+    
+    // Charger l'image
+    img.src = primaryUrl
   }
 
   const shareOnX = () => {
