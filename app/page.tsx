@@ -276,7 +276,7 @@ https://who-are-you-on-x.vercel.app`
       function drawAvatarPlaceholder() {
         // Avatar avec gradient
         const avatarGradient = ctx!.createLinearGradient(avatarX, avatarY, avatarX + avatarSize, avatarY + avatarSize)
-        const colors = getAvatarColor(result.handle).match(/#[a-f0-9]{6}/gi) || ['#667eea', '#764ba2']
+        const colors = getAvatarColor(result!.handle).match(/#[a-f0-9]{6}/gi) || ['#667eea', '#764ba2']
         avatarGradient.addColorStop(0, colors[0])
         avatarGradient.addColorStop(1, colors[1])
         
@@ -289,7 +289,7 @@ https://who-are-you-on-x.vercel.app`
         ctx!.fillStyle = 'white'
         ctx!.font = 'bold 48px system-ui'
         ctx!.textAlign = 'center'
-        ctx!.fillText(result.handle.charAt(0).toUpperCase(), size / 2, avatarY + avatarSize / 2 + 15)
+        ctx!.fillText(result!.handle.charAt(0).toUpperCase(), size / 2, avatarY + avatarSize / 2 + 15)
       }
 
       function finishDrawing() {
@@ -297,12 +297,12 @@ https://who-are-you-on-x.vercel.app`
         ctx!.fillStyle = 'rgba(255, 255, 255, 0.85)'
         ctx!.font = '24px system-ui'
         ctx!.textAlign = 'center'
-        ctx!.fillText(`@${result.handle}`, size / 2, 480)
+        ctx!.fillText(`@${result!.handle}`, size / 2, 480)
 
         // Résultat
         ctx!.fillStyle = 'white'
         ctx!.font = 'bold 36px system-ui'
-        ctx!.fillText(`You are: ${roleNames[result.role]}`, size / 2, 530)
+        ctx!.fillText(`You are: ${roleNames[result!.role]}`, size / 2, 530)
 
         // Description
         ctx!.fillStyle = 'rgba(255, 255, 255, 0.95)'
@@ -311,7 +311,7 @@ https://who-are-you-on-x.vercel.app`
         // Wrap text si trop long
         const maxWidth = 500
         const lineHeight = 30
-        const words = result.line.split(' ')
+        const words = result!.line.split(' ')
         let line = ''
         let y = 570
         
@@ -339,7 +339,7 @@ https://who-are-you-on-x.vercel.app`
             const url = URL.createObjectURL(blob)
             const a = document.createElement('a')
             a.href = url
-            a.download = `who-are-you-on-x-${result.handle}.png`
+            a.download = `who-are-you-on-x-${result!.handle}.png`
             document.body.appendChild(a)
             a.click()
             document.body.removeChild(a)
