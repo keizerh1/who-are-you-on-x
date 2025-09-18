@@ -255,7 +255,6 @@ https://who-are-you-on-x.vercel.app`
         const img = new Image()
         img.crossOrigin = 'anonymous'
         img.onload = () => {
-          if (!ctx) return
           ctx.save()
           ctx.beginPath()
           ctx.arc(size / 2, avatarY + avatarSize / 2, avatarSize / 2, 0, Math.PI * 2)
@@ -275,41 +274,39 @@ https://who-are-you-on-x.vercel.app`
       }
 
       function drawAvatarPlaceholder() {
-        if (!ctx) return
         // Avatar avec gradient
-        const avatarGradient = ctx.createLinearGradient(avatarX, avatarY, avatarX + avatarSize, avatarY + avatarSize)
+        const avatarGradient = ctx!.createLinearGradient(avatarX, avatarY, avatarX + avatarSize, avatarY + avatarSize)
         const colors = getAvatarColor(result.handle).match(/#[a-f0-9]{6}/gi) || ['#667eea', '#764ba2']
         avatarGradient.addColorStop(0, colors[0])
         avatarGradient.addColorStop(1, colors[1])
         
-        ctx.fillStyle = avatarGradient
-        ctx.beginPath()
-        ctx.arc(size / 2, avatarY + avatarSize / 2, avatarSize / 2, 0, Math.PI * 2)
-        ctx.fill()
+        ctx!.fillStyle = avatarGradient
+        ctx!.beginPath()
+        ctx!.arc(size / 2, avatarY + avatarSize / 2, avatarSize / 2, 0, Math.PI * 2)
+        ctx!.fill()
         
         // Lettre
-        ctx.fillStyle = 'white'
-        ctx.font = 'bold 48px system-ui'
-        ctx.textAlign = 'center'
-        ctx.fillText(result.handle.charAt(0).toUpperCase(), size / 2, avatarY + avatarSize / 2 + 15)
+        ctx!.fillStyle = 'white'
+        ctx!.font = 'bold 48px system-ui'
+        ctx!.textAlign = 'center'
+        ctx!.fillText(result.handle.charAt(0).toUpperCase(), size / 2, avatarY + avatarSize / 2 + 15)
       }
 
       function finishDrawing() {
-        if (!ctx) return
         // Handle
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.85)'
-        ctx.font = '24px system-ui'
-        ctx.textAlign = 'center'
-        ctx.fillText(`@${result.handle}`, size / 2, 480)
+        ctx!.fillStyle = 'rgba(255, 255, 255, 0.85)'
+        ctx!.font = '24px system-ui'
+        ctx!.textAlign = 'center'
+        ctx!.fillText(`@${result.handle}`, size / 2, 480)
 
         // Résultat
-        ctx.fillStyle = 'white'
-        ctx.font = 'bold 36px system-ui'
-        ctx.fillText(`You are: ${roleNames[result.role]}`, size / 2, 530)
+        ctx!.fillStyle = 'white'
+        ctx!.font = 'bold 36px system-ui'
+        ctx!.fillText(`You are: ${roleNames[result.role]}`, size / 2, 530)
 
         // Description
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.95)'
-        ctx.font = 'italic 22px system-ui'
+        ctx!.fillStyle = 'rgba(255, 255, 255, 0.95)'
+        ctx!.font = 'italic 22px system-ui'
         
         // Wrap text si trop long
         const maxWidth = 500
@@ -320,21 +317,21 @@ https://who-are-you-on-x.vercel.app`
         
         for (let n = 0; n < words.length; n++) {
           const testLine = line + words[n] + ' '
-          const metrics = ctx.measureText(testLine)
+          const metrics = ctx!.measureText(testLine)
           if (metrics.width > maxWidth && n > 0) {
-            ctx.fillText(line, size / 2, y)
+            ctx!.fillText(line, size / 2, y)
             line = words[n] + ' '
             y += lineHeight
           } else {
             line = testLine
           }
         }
-        ctx.fillText(line, size / 2, y)
+        ctx!.fillText(line, size / 2, y)
 
         // Watermark
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)'
-        ctx.font = '16px system-ui'
-        ctx.fillText('who-are-you-on-x.vercel.app', size / 2, size - 50)
+        ctx!.fillStyle = 'rgba(255, 255, 255, 0.5)'
+        ctx!.font = '16px system-ui'
+        ctx!.fillText('who-are-you-on-x.vercel.app', size / 2, size - 50)
 
         // Télécharger l'image
         canvas.toBlob((blob) => {
