@@ -161,8 +161,6 @@ export default function Home() {
     const primaryUrl = `https://unavatar.io/x/${username}`
     
     const img = new Image()
-    // Enlever crossOrigin pour Vercel
-    // img.crossOrigin = 'anonymous'
     
     // Timeout de 2 secondes
     const timeoutId = setTimeout(() => {
@@ -172,26 +170,35 @@ export default function Home() {
     
     img.onload = () => {
       clearTimeout(timeoutId)
-      // Accepter l'image même si on ne peut pas vérifier sa taille
-      setProfilePic(primaryUrl)
+      // Vérifier si c'est une vraie photo (pas un avatar par défaut)
+      // Les avatars par défaut ont souvent une petite taille
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')
+      
+      if (ctx && img.width > 48) {  // Filtrer les petites images par défaut
+        canvas.width = 1
+        canvas.height = 1
+        ctx.drawImage(img, 0, 0, 1, 1)
+        const pixel = ctx.getImageData(0, 0, 1, 1).data
+        
+        // Si l'image est majoritairement grise/uniforme, c'est probablement un avatar par défaut
+        const isGrayish = Math.abs(pixel[0] - pixel[1]) < 30 && Math.abs(pixel[1] - pixel[2]) < 30
+        
+        if (!isGrayish) {
+          setProfilePic(primaryUrl)
+        } else {
+          setProfilePic(null)
+        }
+      } else {
+        setProfilePic(null)
+      }
       setImageLoading(false)
     }
     
     img.onerror = () => {
       clearTimeout(timeoutId)
-      // Essayer avec une URL de fallback
-      const fallbackImg = new Image()
-      fallbackImg.src = `https://unavatar.io/twitter/${username}`
-      
-      fallbackImg.onload = () => {
-        setProfilePic(`https://unavatar.io/twitter/${username}`)
-        setImageLoading(false)
-      }
-      
-      fallbackImg.onerror = () => {
-        setProfilePic(null)
-        setImageLoading(false)
-      }
+      setProfilePic(null)
+      setImageLoading(false)
     }
     
     // Charger l'image
