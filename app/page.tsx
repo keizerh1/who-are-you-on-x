@@ -154,55 +154,25 @@ export default function Home() {
     }
   }
 
-  const loadProfilePicture = (username: string) => {
+  const loadProfilePicture = async (username: string) => {
     setImageLoading(true)
     
-    // URL directe sans paramètres pour une meilleure compatibilité
-    const primaryUrl = `https://unavatar.io/x/${username}`
-    
-    const img = new Image()
-    
-    // Timeout de 2 secondes
-    const timeoutId = setTimeout(() => {
-      setProfilePic(null)
-      setImageLoading(false)
-    }, 2000)
-    
-    img.onload = () => {
-      clearTimeout(timeoutId)
-      // Vérifier si c'est une vraie photo (pas un avatar par défaut)
-      // Les avatars par défaut ont souvent une petite taille
-      const canvas = document.createElement('canvas')
-      const ctx = canvas.getContext('2d')
+    try {
+      // Utiliser notre API pour vérifier l'avatar côté serveur
+      const response = await fetch(`/api/check-avatar?username=${username}`)
+      const data = await response.json()
       
-      if (ctx && img.width > 48) {  // Filtrer les petites images par défaut
-        canvas.width = 1
-        canvas.height = 1
-        ctx.drawImage(img, 0, 0, 1, 1)
-        const pixel = ctx.getImageData(0, 0, 1, 1).data
-        
-        // Si l'image est majoritairement grise/uniforme, c'est probablement un avatar par défaut
-        const isGrayish = Math.abs(pixel[0] - pixel[1]) < 30 && Math.abs(pixel[1] - pixel[2]) < 30
-        
-        if (!isGrayish) {
-          setProfilePic(primaryUrl)
-        } else {
-          setProfilePic(null)
-        }
+      if (data.hasAvatar && data.url) {
+        setProfilePic(data.url)
       } else {
         setProfilePic(null)
       }
-      setImageLoading(false)
-    }
-    
-    img.onerror = () => {
-      clearTimeout(timeoutId)
+    } catch (error) {
+      console.log('Error checking avatar:', error)
       setProfilePic(null)
+    } finally {
       setImageLoading(false)
     }
-    
-    // Charger l'image
-    img.src = primaryUrl
   }
 
   const shareOnX = () => {
