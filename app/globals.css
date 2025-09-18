@@ -278,6 +278,16 @@ body {
   transform: translateY(0);
 }
 
+.footer {
+  margin-top: 40px;
+  text-align: center;
+  font-size: 0.75rem;
+  opacity: 0.5;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  text-transform: lowercase;
+}
+
 /* Loading animation */
 @keyframes pulse {
   0%, 100% {

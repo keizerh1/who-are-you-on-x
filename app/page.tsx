@@ -367,6 +367,9 @@ https://who-are-you-on-x.vercel.app`
             >
               {loading ? 'Checking...' : 'Check'}
             </button>
+            <div className="footer">
+              Developed by keizer7h
+            </div>
           </div>
         ) : (
           <div className="result-container" ref={resultRef}>
@@ -437,6 +440,9 @@ https://who-are-you-on-x.vercel.app`
               </svg>
               Save as Image
             </button>
+            <div className="footer">
+              Developed by keizer7h
+            </div>
           </div>
         )}
       </div>
