@@ -284,6 +284,10 @@ body {
   }
 }
 
+.profile-placeholder[style*="animation"] {
+  animation: pulse 1.5s infinite;
+}
+
 /* Smooth transitions for all interactive elements */
 button, input, .profile-pic, .profile-placeholder {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);

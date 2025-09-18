@@ -157,33 +157,41 @@ export default function Home() {
   const loadProfilePicture = (username: string) => {
     setImageLoading(true)
     
-    // Essayer directement l'URL principale
+    // URL directe sans paramètres pour une meilleure compatibilité
     const primaryUrl = `https://unavatar.io/x/${username}`
     
     const img = new Image()
-    img.crossOrigin = 'anonymous'
+    // Enlever crossOrigin pour Vercel
+    // img.crossOrigin = 'anonymous'
     
-    // Timeout rapide de 1.5 secondes au lieu de 3
+    // Timeout de 2 secondes
     const timeoutId = setTimeout(() => {
       setProfilePic(null)
       setImageLoading(false)
-    }, 1500)
+    }, 2000)
     
     img.onload = () => {
       clearTimeout(timeoutId)
-      // Vérifier rapidement si l'image est valide
-      if (img.width > 1) {
-        setProfilePic(primaryUrl)
-      } else {
-        setProfilePic(null)
-      }
+      // Accepter l'image même si on ne peut pas vérifier sa taille
+      setProfilePic(primaryUrl)
       setImageLoading(false)
     }
     
     img.onerror = () => {
       clearTimeout(timeoutId)
-      setProfilePic(null)
-      setImageLoading(false)
+      // Essayer avec une URL de fallback
+      const fallbackImg = new Image()
+      fallbackImg.src = `https://unavatar.io/twitter/${username}`
+      
+      fallbackImg.onload = () => {
+        setProfilePic(`https://unavatar.io/twitter/${username}`)
+        setImageLoading(false)
+      }
+      
+      fallbackImg.onerror = () => {
+        setProfilePic(null)
+        setImageLoading(false)
+      }
     }
     
     // Charger l'image
@@ -455,17 +463,6 @@ https://who-are-you-on-x.vercel.app`
           </div>
         )}
       </div>
-      
-      <style jsx>{`
-        @keyframes pulse {
-          0%, 100% {
-            opacity: 1;
-          }
-          50% {
-            opacity: 0.5;
-          }
-        }
-      `}</style>
     </main>
   )
 }

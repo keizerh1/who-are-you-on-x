@@ -23,7 +23,7 @@ const roles: RoleData[] = [
   {
     key: 'builder',
     name: 'Builder',
-    line: "You build about as well as GPT-3.5"
+    line: "You build about as well as GPT 3.5"
   },
   {
     key: 'whale',
