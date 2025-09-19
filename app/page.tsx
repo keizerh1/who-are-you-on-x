@@ -22,72 +22,6 @@ const roleNames: Record<Role, string> = {
   normie: 'Normie'
 }
 
-// Fonction pour capturer le résultat en image
-const captureToCanvas = async (element: HTMLElement): Promise<Blob | null> => {
-  try {
-    // Utilisation de html2canvas (méthode native sans librairie externe)
-    const canvas = document.createElement('canvas')
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return null
-
-    // Dimensions de l'élément
-    const rect = element.getBoundingClientRect()
-    const scale = 2 // Pour une meilleure qualité
-    canvas.width = rect.width * scale
-    canvas.height = rect.height * scale
-    canvas.style.width = rect.width + 'px'
-    canvas.style.height = rect.height + 'px'
-    ctx.scale(scale, scale)
-
-    // Création d'un foreignObject pour le rendu HTML
-    const data = `
-      <svg xmlns="http://www.w3.org/2000/svg" width="${rect.width}" height="${rect.height}">
-        <foreignObject width="100%" height="100%">
-          <div xmlns="http://www.w3.org/1999/xhtml" style="
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: ${rect.height}px;
-          ">
-            ${element.innerHTML}
-          </div>
-        </foreignObject>
-      </svg>
-    `
-
-    // Alternative: utiliser la méthode DOM to Image manuelle
-    return new Promise((resolve) => {
-      // Création d'une image temporaire avec le contenu
-      const tempDiv = document.createElement('div')
-      tempDiv.style.position = 'fixed'
-      tempDiv.style.top = '-9999px'
-      tempDiv.style.width = rect.width + 'px'
-      tempDiv.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-      tempDiv.style.padding = '20px'
-      tempDiv.innerHTML = element.innerHTML
-      
-      // Copier les styles
-      const styles = window.getComputedStyle(element)
-      tempDiv.style.cssText += styles.cssText
-      
-      document.body.appendChild(tempDiv)
-      
-      // Utiliser Canvas API pour capturer
-      setTimeout(() => {
-        canvas.toBlob((blob) => {
-          document.body.removeChild(tempDiv)
-          resolve(blob)
-        }, 'image/png')
-      }, 100)
-    })
-  } catch (error) {
-    console.error('Error capturing screenshot:', error)
-    return null
-  }
-}
-
 export default function Home() {
   const [handle, setHandle] = useState('')
   const [result, setResult] = useState<Result | null>(null)
@@ -119,6 +53,52 @@ export default function Home() {
     return colors[Math.abs(hash) % colors.length]
   }
 
+  // Fonction corrigée pour le chargement de la photo de profil
+  const loadProfilePicture = async (username: string) => {
+    setImageLoading(true)
+    
+    try {
+      const imageUrl = `https://unavatar.io/x/${username}`
+      
+      const img = new Image()
+      img.crossOrigin = 'anonymous'
+      
+      let imageLoaded = false
+      
+      img.onload = () => {
+        if (!imageLoaded) {
+          imageLoaded = true
+          setProfilePic(imageUrl)
+          setImageLoading(false)
+        }
+      }
+      
+      img.onerror = () => {
+        if (!imageLoaded) {
+          imageLoaded = true
+          setProfilePic(null)
+          setImageLoading(false)
+        }
+      }
+      
+      // Timeout seulement si l'image n'a pas été chargée
+      setTimeout(() => {
+        if (!imageLoaded) {
+          imageLoaded = true
+          setProfilePic(null)
+          setImageLoading(false)
+        }
+      }, 5000) // Augmenté à 5 secondes
+      
+      img.src = imageUrl
+      
+    } catch (error) {
+      console.log('Error loading avatar:', error)
+      setProfilePic(null)
+      setImageLoading(false)
+    }
+  }
+
   const checkHandle = async () => {
     if (!handle.trim()) return
     
@@ -127,51 +107,17 @@ export default function Home() {
     setImageLoading(true)
     
     try {
-      // Lancer les deux requêtes en parallèle
-      const [response] = await Promise.all([
-        fetch(`/api/result?handle=${encodeURIComponent(handle)}`),
-        // Précharger l'image en parallèle
-        new Promise((resolve) => {
-          const img = new Image()
-          img.crossOrigin = 'anonymous'
-          img.src = `https://unavatar.io/x/${handle.trim().replace(/^@/, '').toLowerCase()}`
-          img.onload = () => resolve(img.src)
-          img.onerror = () => resolve(null)
-          setTimeout(() => resolve(null), 1500) // Timeout court
-        })
-      ])
-      
+      const response = await fetch(`/api/result?handle=${encodeURIComponent(handle)}`)
       const data = await response.json()
       setResult(data)
       
-      // Charger la photo de profil
+      // Load profile picture after getting the result
       loadProfilePicture(data.handle)
     } catch (error) {
       console.error('Error:', error)
       setImageLoading(false)
     } finally {
       setLoading(false)
-    }
-  }
-
-  const loadProfilePicture = async (username: string) => {
-    setImageLoading(true)
-    
-    try {
-      // Utiliser notre API pour vérifier l'avatar côté serveur
-      const response = await fetch(`/api/check-avatar?username=${username}`)
-      const data = await response.json()
-      
-      if (data.hasAvatar && data.url) {
-        setProfilePic(data.url)
-      } else {
-        setProfilePic(null)
-      }
-    } catch (error) {
-      console.log('Error checking avatar:', error)
-      setProfilePic(null)
-    } finally {
-      setImageLoading(false)
     }
   }
 
@@ -193,7 +139,6 @@ https://who-are-you-on-x.vercel.app`
     if (!resultRef.current || !result) return
     
     try {
-      // Méthode simple : créer un canvas avec le contenu stylé
       const canvas = document.createElement('canvas')
       const ctx = canvas.getContext('2d')
       if (!ctx) {
@@ -201,41 +146,39 @@ https://who-are-you-on-x.vercel.app`
         return
       }
 
-      // Dimensions pour l'image (format carré pour les réseaux sociaux)
       const size = 800
       canvas.width = size
       canvas.height = size
 
-      // Gradient de fond
+      // Gradient background
       const gradient = ctx.createLinearGradient(0, 0, size, size)
       gradient.addColorStop(0, '#667eea')
       gradient.addColorStop(1, '#764ba2')
       ctx.fillStyle = gradient
       ctx.fillRect(0, 0, size, size)
 
-      // Carte blanche semi-transparente
+      // Semi-transparent card
       ctx.fillStyle = 'rgba(255, 255, 255, 0.1)'
       ctx.roundRect(100, 150, 600, 500, 20)
       ctx.fill()
 
-      // Titre
+      // Title
       ctx.fillStyle = 'white'
       ctx.font = 'bold 48px system-ui'
       ctx.textAlign = 'center'
       ctx.fillText('Who are you on X?', size / 2, 250)
 
-      // Sous-titre
+      // Subtitle
       ctx.font = '24px system-ui'
       ctx.fillStyle = 'rgba(255, 255, 255, 0.9)'
       ctx.fillText('A playful test for Monad culture', size / 2, 290)
 
-      // Avatar placeholder ou image
+      // Avatar
       const avatarSize = 100
       const avatarX = size / 2 - avatarSize / 2
       const avatarY = 340
       
       if (profilePic) {
-        // Si on a une photo de profil
         const img = new Image()
         img.crossOrigin = 'anonymous'
         img.onload = () => {
@@ -258,7 +201,6 @@ https://who-are-you-on-x.vercel.app`
       }
 
       function drawAvatarPlaceholder() {
-        // Avatar avec gradient
         const avatarGradient = ctx!.createLinearGradient(avatarX, avatarY, avatarX + avatarSize, avatarY + avatarSize)
         const colors = getAvatarColor(result!.handle).match(/#[a-f0-9]{6}/gi) || ['#667eea', '#764ba2']
         avatarGradient.addColorStop(0, colors[0])
@@ -269,7 +211,6 @@ https://who-are-you-on-x.vercel.app`
         ctx!.arc(size / 2, avatarY + avatarSize / 2, avatarSize / 2, 0, Math.PI * 2)
         ctx!.fill()
         
-        // Lettre
         ctx!.fillStyle = 'white'
         ctx!.font = 'bold 48px system-ui'
         ctx!.textAlign = 'center'
@@ -277,22 +218,18 @@ https://who-are-you-on-x.vercel.app`
       }
 
       function finishDrawing() {
-        // Handle
         ctx!.fillStyle = 'rgba(255, 255, 255, 0.85)'
         ctx!.font = '24px system-ui'
         ctx!.textAlign = 'center'
         ctx!.fillText(`@${result!.handle}`, size / 2, 480)
 
-        // Résultat
         ctx!.fillStyle = 'white'
         ctx!.font = 'bold 36px system-ui'
         ctx!.fillText(`You are: ${roleNames[result!.role]}`, size / 2, 530)
 
-        // Description
         ctx!.fillStyle = 'rgba(255, 255, 255, 0.95)'
         ctx!.font = 'italic 22px system-ui'
         
-        // Wrap text si trop long
         const maxWidth = 500
         const lineHeight = 30
         const words = result!.line.split(' ')
@@ -312,12 +249,10 @@ https://who-are-you-on-x.vercel.app`
         }
         ctx!.fillText(line, size / 2, y)
 
-        // Watermark
         ctx!.fillStyle = 'rgba(255, 255, 255, 0.5)'
         ctx!.font = '16px system-ui'
         ctx!.fillText('who-are-you-on-x.vercel.app', size / 2, size - 50)
 
-        // Télécharger l'image
         canvas.toBlob((blob) => {
           if (blob) {
             const url = URL.createObjectURL(blob)
@@ -338,7 +273,6 @@ https://who-are-you-on-x.vercel.app`
   }
 
   const tryAgain = () => {
-    // Reset state and go back to input
     setResult(null)
     setProfilePic(null)
     setHandle('')
@@ -367,14 +301,10 @@ https://who-are-you-on-x.vercel.app`
             >
               {loading ? 'Checking...' : 'Check'}
             </button>
-            <div className="footer">
-              Developed by keizer7h
-            </div>
           </div>
         ) : (
           <div className="result-container" ref={resultRef}>
             <div className="profile-section">
-              {/* Profile Picture with Loading State */}
               {imageLoading ? (
                 <div className="profile-placeholder" style={{ 
                   background: 'rgba(255, 255, 255, 0.1)',
@@ -387,9 +317,7 @@ https://who-are-you-on-x.vercel.app`
                   src={profilePic} 
                   alt={`@${result.handle}`}
                   className="profile-pic"
-                  onError={() => {
-                    setProfilePic(null)
-                  }}
+                  onError={() => setProfilePic(null)}
                 />
               ) : (
                 <div 
@@ -405,22 +333,14 @@ https://who-are-you-on-x.vercel.app`
             </div>
             
             <p className="handle-text">@{result.handle}</p>
-            
             <h2 className="role-title">You are: {roleNames[result.role]}</h2>
             <p className="role-line">{result.line}</p>
             
             <div className="button-group">
-              <button
-                onClick={tryAgain}
-                className="button-secondary"
-              >
+              <button onClick={tryAgain} className="button-secondary">
                 Try Again
               </button>
-              
-              <button
-                onClick={shareOnX}
-                className="button-x"
-              >
+              <button onClick={shareOnX} className="button-x">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
                 </svg>
@@ -428,11 +348,7 @@ https://who-are-you-on-x.vercel.app`
               </button>
             </div>
             
-            {/* Bouton de capture d'écran */}
-            <button
-              onClick={downloadScreenshot}
-              className="button-screenshot"
-            >
+            <button onClick={downloadScreenshot} className="button-screenshot">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
                 <circle cx="8.5" cy="8.5" r="1.5"/>
@@ -440,11 +356,13 @@ https://who-are-you-on-x.vercel.app`
               </svg>
               Save as Image
             </button>
-            <div className="footer">
-              Developed by keizer7h
-            </div>
           </div>
         )}
+        
+        {/* Single footer outside both conditions */}
+        <div className="footer">
+          Developed by keizer7h
+        </div>
       </div>
     </main>
   )
